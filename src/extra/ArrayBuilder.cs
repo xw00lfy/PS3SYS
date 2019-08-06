@@ -1,32 +1,10 @@
-﻿// ************************************************* //
-//    --- Copyright (c) 2015 iMCS Productions ---    //
-// ************************************************* //
-//              PS3Lib v4 By FM|T iMCSx              //
-//                                                   //
-// Features v4.5 :                                   //
-// - Support CCAPI v2.60+ C# by iMCSx.               //
-// - Read/Write memory as 'double'.                  //
-// - Read/Write memory as 'float' array.             //
-// - Constructor overload for ArrayBuilder.          //
-// - Some functions fixes.                           //
-//                                                   //
-// Credits : Enstone, Buc-ShoTz                      //
-//                                                   //
-// Follow me :                                       //
-//                                                   //
-// FrenchModdingTeam.com                             //
-// Twitter.com/iMCSx                                 //
-// Facebook.com/iMCSx                                //
-//                                                   //
-// ************************************************* //
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PS3Lib
+namespace PS3System
 {
     public enum EndianType
     {
@@ -104,7 +82,7 @@ namespace PS3Lib
             public short GetInt16(int pos, EndianType Type = EndianType.BigEndian)
             {
                 byte[] b = new byte[2];
-                for(int i = 0; i < 2; i++)
+                for (int i = 0; i < 2; i++)
                     b[i] = buffer[pos + i];
                 if (Type == EndianType.BigEndian)
                     Array.Reverse(b, 0, 2);
@@ -190,7 +168,7 @@ namespace PS3Lib
             {
                 byte[] b = new byte[4];
                 for (int i = 0; i < 4; i++)
-                    b[i] = buffer[pos+i];
+                    b[i] = buffer[pos + i];
                 Array.Reverse(b, 0, 4);
                 return BitConverter.ToSingle(b, 0);
             }
@@ -293,7 +271,7 @@ namespace PS3Lib
 
             public void SetString(int pos, string value)
             {
-                byte[] b = Encoding.UTF8.GetBytes(value+"\0");
+                byte[] b = Encoding.UTF8.GetBytes(value + "\0");
                 for (int i = 0; i < b.Length; i++)
                     buffer[i + pos] = b[i];
             }
@@ -305,6 +283,9 @@ namespace PS3Lib
                 for (int i = 0; i < 4; i++)
                     buffer[i + pos] = b[i];
             }
+
         }
+
     }
+
 }
