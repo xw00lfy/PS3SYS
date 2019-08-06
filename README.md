@@ -1,18 +1,19 @@
-# PS3 Library for .NET
+# PS3 Library for .NET Framework
 
-This will allow you to communicate with your PS3 DEX/CEX
-Connection with targets , read/write memory and more...
+This library communicates with APIs to establish connection to the PS3.
+This library gives access to PS3 functions through APIs
 
 # Last changes:
-- Support CCAPI v2.60+.
-- Read/Write memory as 'double'.
-- Read/Write memory as 'float' array.
-- ArrayBuilder constructor overload.
-- Some functions fixes. 
+- Support CCAPI v2.80+.
+- Added PS3MAPI Support
+- Changed Syntax for CCAPI, TMAPI
+- Added EasyTMAPI to make programming with TMAPI easier
 
 # Functions list :
 
-- Support CCAPI v2.60+ C#.
+- Support CCAPI v2.80+ C#.
+- Support TMAPI
+- Support PS3MAPI
 - Set boot console Ids
 - No need to give CCAPI.dll
 - Function ReadString is now very fast.
@@ -27,20 +28,12 @@ Connection with targets , read/write memory and more...
 
 # MD5 Hash
 
-- v4.5.1: 0B35CC2DF877C881469094FE47D2E825
-
 # Information
 
-- Don't forget to INSTALL the latest version of CCAPI (v2.60 (or higher)) in your PS3 if you want develop applications with CCAPI C#
-	- http://www.frenchmoddingteam.com/shop/application/20-control-console-api-2-60-rte-cex-dex
+- Don't forget to INSTALL the latest version of CCAPI (v2.80 (or higher)) in your PS3 if you want develop applications with CCAPI C#
+	- http://www.frenchmoddingteam.com/shop/application/20-control-console-api-2-80-rte-cex-dex
 
-
-More informations about all PS3Lib functions here :
-
-- http://www.nextgenupdate.com/forums/ps3-cheats-customization/697273-release-ps3lib-v4-4-dex-cex.html
-
-- http://www.frenchmoddingteam.com/news/article/9-release-ps3lib-v4-4-dex-cex
 
 # Contributing
 
-Feel free to do a PR. :)
+I select who will contribute on this project :)
