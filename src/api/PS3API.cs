@@ -1,26 +1,3 @@
-﻿// ************************************************* //
-//    --- Copyright (c) 2015 iMCS Productions ---    //
-// ************************************************* //
-//              PS3Lib v4 By FM|T iMCSx              //
-//                                                   //
-// Features v4.5 :                                   //
-// - Support CCAPI v2.60+ C# by iMCSx.               //
-// - Read/Write memory as 'double'.                  //
-// - Read/Write memory as 'float' array.             //
-// - Constructor overload for ArrayBuilder.          //
-// - Some functions fixes.                           //
-//                                                   //
-// Credits : Enstone, Buc-ShoTz                      //
-//                                                   //
-// Follow me :                                       //
-//                                                   //
-// FrenchModdingTeam.com                             //
-// Twitter.com/iMCSx                                 //
-// Facebook.com/iMCSx                                //
-//                                                   //
-// ************************************************* //
-
-using PS3Lib.Properties;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -31,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace PS3Lib
+namespace PS3System
 {
     public enum Lang
     {
@@ -43,15 +20,18 @@ namespace PS3Lib
 
     public enum SelectAPI
     {
-        ControlConsole,
-        TargetManager
+        TMAPI,
+        CCAPI,
+        PS3MAPI,
+        EasyTMAPI
+            
     }
 
     public class PS3API
     {
         private static string targetName = String.Empty;
         private static string targetIp = String.Empty;
-        public PS3API(SelectAPI API = SelectAPI.TargetManager)
+        public PS3API(SelectAPI API = SelectAPI.TMAPI)
         {
             SetAPI.API = API;
             MakeInstanceAPI(API);
@@ -64,12 +44,19 @@ namespace PS3Lib
 
         private void MakeInstanceAPI(SelectAPI API)
         {
-            if (API == SelectAPI.TargetManager)
+            if (API == SelectAPI.TMAPI)
                 if (Common.TmApi == null)
                     Common.TmApi = new TMAPI();
-            if (API == SelectAPI.ControlConsole)
+            if (API == SelectAPI.CCAPI)
                 if (Common.CcApi == null)
                     Common.CcApi = new CCAPI();
+            if (API == SelectAPI.PS3MAPI)
+                if (Common.PS3mApi == null)
+                    Common.PS3mApi = new PS3MAPI();
+            if (API == SelectAPI.EasyTMAPI)
+                if (Common.eTmApi == null)
+                    Common.eTmApi = new EasyTMAPI();
+            
         }
 
         private class SetLang
@@ -86,6 +73,8 @@ namespace PS3Lib
         {
             public static CCAPI CcApi;
             public static TMAPI TmApi;
+            public static PS3MAPI PS3mApi;
+            public static EasyTMAPI eTmApi;
         }
 
         /// <summary>Force a language for the console list popup.</summary>
@@ -94,11 +83,13 @@ namespace PS3Lib
             SetLang.defaultLang = Language;
         }
 
-       /// <summary>init again the connection if you use a Thread or a Timer.</summary>
+        /// <summary>init again the connection if you use a Thread or a Timer.</summary>
         public void InitTarget()
         {
-            if (SetAPI.API == SelectAPI.TargetManager)
+            if (SetAPI.API == SelectAPI.TMAPI)
                 Common.TmApi.InitComms();
+            else if (SetAPI.API == SelectAPI.EasyTMAPI)
+                Common.eTmApi.InitTargetComms();
         }
 
         /// <summary>Connect your console with selected API.</summary>
@@ -108,9 +99,9 @@ namespace PS3Lib
             MakeInstanceAPI(GetCurrentAPI());
 
             bool result = false;
-            if (SetAPI.API == SelectAPI.TargetManager)
-                result = Common.TmApi.ConnectTarget(target);
-            else
+            if (SetAPI.API == SelectAPI.TMAPI)
+                result = Common.TmApi.Connect(target);
+            else if (SetAPI.API == SelectAPI.CCAPI)
                 result = new ConsoleList(this).Show();
             return result;
         }
@@ -120,20 +111,31 @@ namespace PS3Lib
         {
             // We'll check again if the instance has been done.
             MakeInstanceAPI(GetCurrentAPI());
-            if (Common.CcApi.SUCCESS(Common.CcApi.ConnectTarget(ip)))
+            if (Common.CcApi.SUCCESS(Common.CcApi.Connect(ip)))
             {
                 targetIp = ip;
                 return true;
             }
+            else if (Common.PS3mApi.ConnectTarget(ip, 7887))
+            {
+                targetIp = ip;
+                return true;
+            }
+
             else return false;
         }
 
         /// <summary>Disconnect Target with selected API.</summary>
         public void DisconnectTarget()
         {
-            if (SetAPI.API == SelectAPI.TargetManager)
-                Common.TmApi.DisconnectTarget();
-            else Common.CcApi.DisconnectTarget();
+            if (SetAPI.API == SelectAPI.TMAPI)
+                Common.TmApi.Disconnect();
+            else if (SetAPI.API == SelectAPI.CCAPI)
+                Common.CcApi.Disconnect();
+            else if (SetAPI.API == SelectAPI.PS3MAPI)
+                Common.PS3mApi.DisconnectTarget();
+            else
+                Common.eTmApi.Disconnect();
         }
 
         /// <summary>Attach the current process (current Game) with selected API.</summary>
@@ -143,16 +145,35 @@ namespace PS3Lib
             MakeInstanceAPI(GetCurrentAPI());
 
             bool AttachResult = false;
-            if (SetAPI.API == SelectAPI.TargetManager)
-                AttachResult = Common.TmApi.AttachProcess();
-            else if (SetAPI.API == SelectAPI.ControlConsole)
-                AttachResult = Common.CcApi.SUCCESS(Common.CcApi.AttachProcess());
+            if (SetAPI.API == SelectAPI.TMAPI)
+                AttachResult = Common.TmApi.AttachProc();
+            else if (SetAPI.API == SelectAPI.CCAPI)
+                AttachResult = Common.CcApi.SUCCESS(Common.CcApi.ProcAttach());
+            return AttachResult;
+        }
+
+
+        /// <summary>
+        /// Attaches to process by processID. Only works for PS3MAPI and CCAPI
+        /// </summary>
+        /// <param name="processID"></param>
+        /// <returns></returns>
+        public bool AttachProcess(uint processID)
+        {
+            MakeInstanceAPI(GetCurrentAPI());
+
+            bool AttachResult = false;
+            if (SetAPI.API == SelectAPI.CCAPI)
+                AttachResult = Common.CcApi.SUCCESS(Common.CcApi.ProcAttach(processID));
+            else if (SetAPI.API == SelectAPI.PS3MAPI)
+                AttachResult = Common.PS3mApi.AttachProcess(processID);
+
             return AttachResult;
         }
 
         public string GetConsoleName()
         {
-            if (SetAPI.API == SelectAPI.TargetManager)
+            if (SetAPI.API == SelectAPI.TMAPI)
                 return Common.TmApi.SCE.GetTargetName();
             else
             {
@@ -172,34 +193,37 @@ namespace PS3Lib
                 }
                 return targetIp;
             }
+          
         }
 
-        /// <summary>Set memory to offset with selected API.</summary>
-        public void SetMemory(uint offset, byte[] buffer)
+        public void SetProcMem(uint offset, byte[] buffer)
         {
-            if (SetAPI.API == SelectAPI.TargetManager)
-                Common.TmApi.SetMemory(offset, buffer);
-            else if (SetAPI.API == SelectAPI.ControlConsole)
-                Common.CcApi.SetMemory(offset, buffer);
+            if (SetAPI.API == SelectAPI.TMAPI)
+                Common.TmApi.SetProcMem(offset, buffer);
+            else if (SetAPI.API == SelectAPI.CCAPI)
+                Common.CcApi.SetProcMem(offset, buffer);
+                
         }
 
         /// <summary>Get memory from offset using the Selected API.</summary>
-        public void GetMemory(uint offset, byte[] buffer)
+        public void GetProcMem(uint offset, byte[] buffer)
         {
-            if (SetAPI.API == SelectAPI.TargetManager)
-                Common.TmApi.GetMemory(offset, buffer);
-            else if (SetAPI.API == SelectAPI.ControlConsole)
-                Common.CcApi.GetMemory(offset, buffer);
+            if (SetAPI.API == SelectAPI.TMAPI)
+                Common.TmApi.GetProcMem(offset, buffer);
+            else if (SetAPI.API == SelectAPI.CCAPI)
+                Common.CcApi.GetProcMem(offset, buffer);
         }
 
         /// <summary>Get memory from offset with a length using the Selected API.</summary>
         public byte[] GetBytes(uint offset, int length)
         {
             byte[] buffer = new byte[length];
-            if (SetAPI.API == SelectAPI.TargetManager)
-                Common.TmApi.GetMemory(offset, buffer);
-            else if (SetAPI.API == SelectAPI.ControlConsole)
-                Common.CcApi.GetMemory(offset, buffer);
+            if (SetAPI.API == SelectAPI.TMAPI)
+                Common.TmApi.GetProcMem(offset, buffer);
+            else if (SetAPI.API == SelectAPI.CCAPI)
+                Common.CcApi.GetProcMem(offset, buffer);
+            
+                
             return buffer;
         }
 
@@ -220,9 +244,12 @@ namespace PS3Lib
         public string GetCurrentAPIName()
         {
             string output = String.Empty;
-            if (SetAPI.API == SelectAPI.TargetManager)
-                output = Enum.GetName(typeof(SelectAPI), SelectAPI.TargetManager).Replace("Manager"," Manager");
-            else output = Enum.GetName(typeof(SelectAPI), SelectAPI.ControlConsole).Replace("Console", " Console");
+            if (SetAPI.API == SelectAPI.TMAPI)
+                output = Enum.GetName(typeof(SelectAPI), SelectAPI.TMAPI).Replace("Manager", " Manager");
+            else if (SetAPI.API == SelectAPI.CCAPI)
+                output = Enum.GetName(typeof(SelectAPI), SelectAPI.CCAPI).Replace("Console", " Console");
+            else
+                output = Enum.GetName(typeof(SelectAPI), SelectAPI.PS3MAPI).Replace("PS3", " Manager");
             return output;
         }
 
@@ -242,6 +269,11 @@ namespace PS3Lib
         public TMAPI TMAPI
         {
             get { return new TMAPI(); }
+        }
+
+        public PS3MAPI PS3MAPI
+        {
+            get { return new PS3MAPI(); }
         }
 
         /// <summary>Access to all CCAPI functions.</summary>
@@ -293,7 +325,7 @@ namespace PS3Lib
                         case "noConsoleTitle": return "Aucune console disponible.";
                     }
                 }
-                else if(lang == Lang.German)
+                else if (lang == Lang.German)
                 {
                     switch (keyword)
                     {
@@ -349,7 +381,7 @@ namespace PS3Lib
                 btnConnect.Enabled = false;
                 btnConnect.Click += (sender, e) =>
                 {
-                    if(tNum > -1)
+                    if (tNum > -1)
                     {
                         if (Api.ConnectTarget(data[tNum].Ip))
                         {
@@ -390,7 +422,7 @@ namespace PS3Lib
                 listView.Font = new Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
                 listViewGroup.Header = "Consoles";
                 listViewGroup.Name = "consoleGroup";
-                listView.Groups.AddRange(new ListViewGroup[] {listViewGroup});
+                listView.Groups.AddRange(new ListViewGroup[] { listViewGroup });
                 listView.HideSelection = false;
                 listView.Location = new Point(12, 12);
                 listView.MultiSelect = false;
@@ -437,8 +469,7 @@ namespace PS3Lib
                 formList.Controls.Add(btnRefresh);
 
                 // Start to update our list
-                ImageList imgL = new ImageList();
-                imgL.Images.Add(Resources.ps3);
+                ImageList imgL = new ImageList(); 
                 listView.SmallImageList = imgL;
                 int sizeData = data.Count();
 
@@ -463,5 +494,6 @@ namespace PS3Lib
                 return Result;
             }
         }
+
     }
 }
