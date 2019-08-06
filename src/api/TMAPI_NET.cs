@@ -1,25 +1,3 @@
-﻿// ************************************************* //
-//    --- Copyright (c) 2015 iMCS Productions ---    //
-// ************************************************* //
-//              PS3Lib v4 By FM|T iMCSx              //
-//                                                   //
-// Features v4.5 :                                   //
-// - Support CCAPI v2.60+ C# by iMCSx.               //
-// - Read/Write memory as 'double'.                  //
-// - Read/Write memory as 'float' array.             //
-// - Constructor overload for ArrayBuilder.          //
-// - Some functions fixes.                           //
-//                                                   //
-// Credits : Enstone, Buc-ShoTz                      //
-//                                                   //
-// Follow me :                                       //
-//                                                   //
-// FrenchModdingTeam.com                             //
-// Twitter.com/iMCSx                                 //
-// Facebook.com/iMCSx                                //
-//                                                   //
-// ************************************************* //
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PS3Lib.NET
+namespace PS3System.NET
 {
     public class PS3TMAPI
     {
@@ -331,7 +309,7 @@ namespace PS3Lib.NET
             return PowerOffX86(target, force);
         }
 
-        public static SNRESULT GetProcessList(int target, out uint[] processIDs)
+        public static SNRESULT GetProcList(int target, out uint[] processIDs)
         {
             processIDs = null;
             uint count = 0;
@@ -354,7 +332,7 @@ namespace PS3Lib.NET
             return res;
         }
 
-        public static SNRESULT ProcessAttach(int target, UnitType unit, uint processID)
+        public static SNRESULT ProcAttach(int target, UnitType unit, uint processID)
         {
             if (!Is32Bit())
             {
@@ -363,7 +341,7 @@ namespace PS3Lib.NET
             return ProcessAttachX86(target, (uint)unit, processID);
         }
 
-        public static SNRESULT ProcessContinue(int target, uint processID)
+        public static SNRESULT ProcContinue(int target, uint processID)
         {
             if (!Is32Bit())
             {
@@ -436,7 +414,7 @@ namespace PS3Lib.NET
             return ResetX86(target, (ulong)resetParameter);
         }
 
-        public static SNRESULT ProcessGetMemory(int target, UnitType unit, uint processID, ulong threadID, ulong address, ref byte[] buffer)
+        public static SNRESULT GetProcMem(int target, UnitType unit, uint processID, ulong threadID, ulong address, ref byte[] buffer)
         {
             if (!Is32Bit())
             {
@@ -445,7 +423,7 @@ namespace PS3Lib.NET
             return ProcessGetMemoryX86(target, unit, processID, threadID, address, buffer.Length, buffer);
         }
 
-        public static SNRESULT ProcessSetMemory(int target, UnitType unit, uint processID, ulong threadID, ulong address, byte[] buffer)
+        public static SNRESULT SetProcMem(int target, UnitType unit, uint processID, ulong threadID, ulong address, byte[] buffer)
         {
             if (!Is32Bit())
             {
