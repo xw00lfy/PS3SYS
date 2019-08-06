@@ -1,25 +1,3 @@
-﻿// ************************************************* //
-//    --- Copyright (c) 2015 iMCS Productions ---    //
-// ************************************************* //
-//              PS3Lib v4 By FM|T iMCSx              //
-//                                                   //
-// Features v4.5 :                                   //
-// - Support CCAPI v2.60+ C# by iMCSx.               //
-// - Read/Write memory as 'double'.                  //
-// - Read/Write memory as 'float' array.             //
-// - Constructor overload for ArrayBuilder.          //
-// - Some functions fixes.                           //
-//                                                   //
-// Credits : Enstone, Buc-ShoTz                      //
-//                                                   //
-// Follow me :                                       //
-//                                                   //
-// FrenchModdingTeam.com                             //
-// Twitter.com/iMCSx                                 //
-// Facebook.com/iMCSx                                //
-//                                                   //
-// ************************************************* //
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,71 +10,75 @@ using System.IO;
 using Microsoft.Win32;
 using System.Security.Cryptography;
 
-namespace PS3Lib
+
+namespace PS3System
 {
     public class CCAPI
     {
         [DllImport("kernel32.dll")]
+        static extern uint GetLastError();
+        [DllImport("kernel32.dll")]
         static extern IntPtr LoadLibrary(string dllName);
-
         [DllImport("kernel32.dll")]
         static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+        [DllImport("kernel32.dll")]
+        static extern bool FreeLibrary(IntPtr a);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int connectConsoleDelegate(string targetIP);
+        private delegate int CCAPIConnectConsole_t(string targetIP);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int disconnectConsoleDelegate();
+        private delegate int CCAPIDisconnectConsole_t();
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int getConnectionStatusDelegate(ref int status);
+        private delegate int CCAPIGetConnectionStatus_t(ref int status);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int getConsoleInfoDelegate(int index, IntPtr ptrN, IntPtr ptrI);
+        private delegate int CCAPIGetConsoleInfo_t(int index, IntPtr ptrN, IntPtr ptrI);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int getDllVersionDelegate();
+        private delegate int CCAPIGetDllVersion_t();
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int getFirmwareInfoDelegate(ref int firmware, ref int ccapi, ref int consoleType);
+        private delegate int CCAPIGetFirmwareInfo_t(ref int firmware, ref int ccapi, ref int consoleType);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int getNumberOfConsolesDelegate();
+        private delegate int CCAPIGetNumberOfConsoles_t();
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int getProcessListDelegate(ref uint numberProcesses, IntPtr processIdPtr);
+        private delegate int CCAPIGetProcessList_t(ref uint numberProcesses, IntPtr processIdPtr);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int getProcessMemoryDelegate(uint processID, ulong offset, uint size, byte[] buffOut);
+        private delegate int CCAPIGetMemory_t(uint processID, ulong offset, uint size, byte[] buffOut);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int getProcessNameDelegate(uint processID, IntPtr strPtr);
+        private delegate int CCAPIGetProcessName_t(uint processID, IntPtr strPtr);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int getTemperatureDelegate(ref int cell, ref int rsx);
+        private delegate int CCAPIGetTemperature_t(ref int cell, ref int rsx);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int notifyDelegate(int mode, string msgWChar);
+        private delegate int CCAPIVshNotify_t(int mode, string msgWChar);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int ringBuzzerDelegate(int type);
+        private delegate int CCAPIRingBuzzer_t(int type);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int setBootConsoleIdsDelegate(int idType, int on, byte[] ID);
+        private delegate int CCAPISetBootConsoleIds_t(int idType, int on, byte[] ID);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int setConsoleIdsDelegate(int idType, byte[] consoleID);
+        private delegate int CCAPISetConsoleIds_t(int idType, byte[] consoleID);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int setConsoleLedDelegate(int color, int status);
+        private delegate int CCAPISetConsoleLed_t(int color, int status);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int setProcessMemoryDelegate(uint processID, ulong offset, uint size, byte[] buffIn);
+        private delegate int CCAPISetMemory_t(uint processID, ulong offset, uint size, byte[] buffIn);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int shutdownDelegate(int mode);
+        private delegate int CCAPIShutdown_t(int mode);
 
-        private connectConsoleDelegate connectConsole;
-        private disconnectConsoleDelegate disconnectConsole;
-        private getConnectionStatusDelegate getConnectionStatus;
-        private getConsoleInfoDelegate getConsoleInfo;
-        private getDllVersionDelegate getDllVersion;
-        private getFirmwareInfoDelegate getFirmwareInfo;
-        private getNumberOfConsolesDelegate getNumberOfConsoles;
-        private getProcessListDelegate getProcessList;
-        private getProcessMemoryDelegate getProcessMemory;
-        private getProcessNameDelegate getProcessName;
-        private getTemperatureDelegate getTemperature;
-        private notifyDelegate notify;
-        private ringBuzzerDelegate ringBuzzer;
-        private setBootConsoleIdsDelegate setBootConsoleIds;
-        private setConsoleIdsDelegate setConsoleIds;
-        private setConsoleLedDelegate setConsoleLed;
-        private setProcessMemoryDelegate setProcessMemory;
-        private shutdownDelegate shutdown;
+        private CCAPIConnectConsole_t connectConsole;
+        private CCAPIDisconnectConsole_t disconnectConsole;
+        private CCAPIGetConnectionStatus_t getConnectionStatus;
+        private CCAPIGetConsoleInfo_t getConsoleInfo;
+        private CCAPIGetDllVersion_t getDllVersion;
+        private CCAPIGetFirmwareInfo_t getFirmwareInfo;
+        private CCAPIGetNumberOfConsoles_t getNumberOfConsoles;
+        private CCAPIGetProcessList_t getProcessList;
+        private CCAPIGetMemory_t getProcessMemory;
+        private CCAPIGetProcessName_t getProcessName;
+        private CCAPIGetTemperature_t getTemperature;
+        private CCAPIVshNotify_t notify;
+        private CCAPIRingBuzzer_t ringBuzzer;
+        private CCAPISetBootConsoleIds_t setBootConsoleIds;
+        private CCAPISetConsoleIds_t setConsoleIds;
+        private CCAPISetConsoleLed_t setConsoleLed;
+        private CCAPISetMemory_t setProcessMemory;
+        private CCAPIShutdown_t shutdown;
 
         private IntPtr libModule = IntPtr.Zero;
         private List<IntPtr> CCAPIFunctionsList = new List<IntPtr>();
@@ -164,38 +146,38 @@ namespace PS3Lib
 
                             if (IsCCAPILoaded())
                             {
-                                connectConsole = (connectConsoleDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.ConnectConsole), typeof(connectConsoleDelegate));
-                                disconnectConsole = (disconnectConsoleDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.DisconnectConsole), typeof(disconnectConsoleDelegate));
-                                getConnectionStatus = (getConnectionStatusDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetConnectionStatus), typeof(getConnectionStatusDelegate));
-                                getConsoleInfo = (getConsoleInfoDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetConsoleInfo), typeof(getConsoleInfoDelegate));
-                                getDllVersion = (getDllVersionDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetDllVersion), typeof(getDllVersionDelegate));
-                                getFirmwareInfo = (getFirmwareInfoDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetFirmwareInfo), typeof(getFirmwareInfoDelegate));
-                                getNumberOfConsoles = (getNumberOfConsolesDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetNumberOfConsoles), typeof(getNumberOfConsolesDelegate));
-                                getProcessList = (getProcessListDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetProcessList), typeof(getProcessListDelegate));
-                                getProcessMemory = (getProcessMemoryDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetMemory), typeof(getProcessMemoryDelegate));
-                                getProcessName = (getProcessNameDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetProcessName), typeof(getProcessNameDelegate));
-                                getTemperature = (getTemperatureDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetTemperature), typeof(getTemperatureDelegate));
-                                notify = (notifyDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.VshNotify), typeof(notifyDelegate));
-                                ringBuzzer = (ringBuzzerDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.RingBuzzer), typeof(ringBuzzerDelegate));
-                                setBootConsoleIds = (setBootConsoleIdsDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.SetBootConsoleIds), typeof(setBootConsoleIdsDelegate));
-                                setConsoleIds = (setConsoleIdsDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.SetConsoleIds), typeof(setConsoleIdsDelegate));
-                                setConsoleLed = (setConsoleLedDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.SetConsoleLed), typeof(setConsoleLedDelegate));
-                                setProcessMemory = (setProcessMemoryDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.SetMemory), typeof(setProcessMemoryDelegate));
-                                shutdown = (shutdownDelegate)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.ShutDown), typeof(shutdownDelegate));
+                                connectConsole = (CCAPIConnectConsole_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.ConnectConsole), typeof(CCAPIConnectConsole_t));
+                                disconnectConsole = (CCAPIDisconnectConsole_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.DisconnectConsole), typeof(CCAPIDisconnectConsole_t));
+                                getConnectionStatus = (CCAPIGetConnectionStatus_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetConnectionStatus), typeof(CCAPIGetConnectionStatus_t));
+                                getConsoleInfo = (CCAPIGetConsoleInfo_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetConsoleInfo), typeof(CCAPIGetConsoleInfo_t));
+                                getDllVersion = (CCAPIGetDllVersion_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetDllVersion), typeof(CCAPIGetDllVersion_t));
+                                getFirmwareInfo = (CCAPIGetFirmwareInfo_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetFirmwareInfo), typeof(CCAPIGetFirmwareInfo_t));
+                                getNumberOfConsoles = (CCAPIGetNumberOfConsoles_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetNumberOfConsoles), typeof(CCAPIGetNumberOfConsoles_t));
+                                getProcessList = (CCAPIGetProcessList_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetProcessList), typeof(CCAPIGetProcessList_t));
+                                getProcessMemory = (CCAPIGetMemory_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetMemory), typeof(CCAPIGetMemory_t));
+                                getProcessName = (CCAPIGetProcessName_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetProcessName), typeof(CCAPIGetProcessName_t));
+                                getTemperature = (CCAPIGetTemperature_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.GetTemperature), typeof(CCAPIGetTemperature_t));
+                                notify = (CCAPIVshNotify_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.VshNotify), typeof(CCAPIVshNotify_t));
+                                ringBuzzer = (CCAPIRingBuzzer_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.RingBuzzer), typeof(CCAPIRingBuzzer_t));
+                                setBootConsoleIds = (CCAPISetBootConsoleIds_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.SetBootConsoleIds), typeof(CCAPISetBootConsoleIds_t));
+                                setConsoleIds = (CCAPISetConsoleIds_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.SetConsoleIds), typeof(CCAPISetConsoleIds_t));
+                                setConsoleLed = (CCAPISetConsoleLed_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.SetConsoleLed), typeof(CCAPISetConsoleLed_t));
+                                setProcessMemory = (CCAPISetMemory_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.SetMemory), typeof(CCAPISetMemory_t));
+                                shutdown = (CCAPIShutdown_t)Marshal.GetDelegateForFunctionPointer(GetCCAPIFunctionPtr(CCAPIFunctions.ShutDown), typeof(CCAPIShutdown_t));
                             }
                             else
                             {
-                                MessageBox.Show("Impossible to load CCAPI 2.60+", "This CCAPI.dll is not compatible", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                MessageBox.Show("Impossible to load CCAPI 2.80+", "This CCAPI.dll is not compatible", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             }
                         }
                         else
                         {
-                            MessageBox.Show("Impossible to load CCAPI 2.60+", "CCAPI.dll cannot be loaded", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            MessageBox.Show("Impossible to load CCAPI 2.80+", "CCAPI.dll cannot be loaded", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                     }
                     else
                     {
-                        MessageBox.Show("You need to install CCAPI 2.60+ to use this library.", "CCAPI.dll not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show("You need to install CCAPI 2.80+ to use this library.", "CCAPI.dll not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
                 else
@@ -205,7 +187,7 @@ namespace PS3Lib
             }
             else
             {
-                MessageBox.Show("You need to install CCAPI 2.60+ to use this library.", "CCAPI not installed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("You need to install CCAPI 2.80+ to use this library.", "CCAPI not installed", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -253,7 +235,7 @@ namespace PS3Lib
             CURRENTGAME
         }
 
-        public enum RebootFlags
+        public enum BootMode
         {
             ShutDown = 1,
             SoftReboot = 2,
@@ -320,11 +302,6 @@ namespace PS3Lib
                 Ip;
         }
 
-        public Extension Extension
-        {
-            get { return new Extension(SelectAPI.ControlConsole); }
-        }
-
         private IntPtr GetCCAPIFunctionPtr(CCAPIFunctions Function)
         {
             return CCAPIFunctionsList.ElementAt((int)Function);
@@ -356,44 +333,62 @@ namespace PS3Lib
             else return false;
         }
 
-        /// <summary>Connect your console by console list.</summary>
-        public bool ConnectTarget()
+        public bool Connect()
         {
-            return new PS3API.ConsoleList(new PS3API(SelectAPI.ControlConsole)).Show();
+            return new PS3API.ConsoleList(new PS3API(SelectAPI.CCAPI)).Show();
         }
 
+
         /// <summary>Connect your console by ip address.</summary>
-        public int ConnectTarget(string targetIP)
+        public int Connect(string targetIP)
         {
             int code = connectConsole(targetIP);
             return code;
         }
 
-        /// <summary>Get the status of the console.</summary>
-        public int GetConnectionStatus()
-        {
-            int status = 0;
-            getConnectionStatus(ref status);
-            return status;
-        }
-
-        /// <summary>Disconnect your console.</summary>
-        public int DisconnectTarget()
+        public int Disconnect()
         {
             return disconnectConsole();
         }
 
-        /// <summary>Attach the default process (Current Game).</summary>
-        public int AttachProcess()
+        public int GetProcList(out uint[] processIds)
+        {
+            uint numOfProcs = 64; int result = -1;
+            IntPtr ptr = Marshal.AllocHGlobal((int)(4 * 0x40));
+            result = getProcessList(ref numOfProcs, ptr);
+            processIds = new uint[numOfProcs];
+            if (SUCCESS(result))
+            {
+                IntPtr unBuf = ptr;
+                for (uint i = 0; i < numOfProcs; i++)
+                    unBuf = ReadDataFromUnBufPtr<uint>(unBuf, ref processIds[i]);
+            }
+            Marshal.FreeHGlobal(ptr);
+            return result;
+        }
+
+        /// <summary>Get the process name of your choice.</summary>
+        public int GetProcName(uint processId, out string name)
+        {
+            IntPtr ptr = Marshal.AllocHGlobal((int)(0x211)); int result = -1;
+            result = getProcessName(processId, ptr);
+            name = String.Empty;
+            if (SUCCESS(result))
+                name = Marshal.PtrToStringAnsi(ptr);
+            Marshal.FreeHGlobal(ptr);
+            return result;
+        }
+
+        public int ProcAttach()
         {
             int result = -1; System.processID = 0;
-            result = GetProcessList(out System.processIDs);
+            result = GetProcList(out System.processIDs);
             if (SUCCESS(result) && System.processIDs.Length > 0)
             {
                 for (int i = 0; i < System.processIDs.Length; i++)
                 {
                     string name = String.Empty;
-                    result = GetProcessName(System.processIDs[i], out name);
+                    result = GetProcName(System.processIDs[i], out name);
                     if (!SUCCESS(result))
                         break;
                     if (!name.Contains("flash"))
@@ -411,16 +406,16 @@ namespace PS3Lib
         }
 
         /// <summary>Attach your desired process.</summary>
-        public int AttachProcess(ProcessType procType)
+        public int ProcAttach(ProcessType procType)
         {
             int result = -1; System.processID = 0;
-            result = GetProcessList(out System.processIDs);
+            result = GetProcList(out System.processIDs);
             if (result >= 0 && System.processIDs.Length > 0)
             {
                 for (int i = 0; i < System.processIDs.Length; i++)
                 {
                     string name = String.Empty;
-                    result = GetProcessName(System.processIDs[i], out name);
+                    result = GetProcName(System.processIDs[i], out name);
                     if (result < 0)
                         break;
                     if (procType == ProcessType.VSH && name.Contains("vsh"))
@@ -443,12 +438,11 @@ namespace PS3Lib
             return result;
         }
 
-        /// <summary>Attach your desired process.</summary>
-        public int AttachProcess(uint process)
+        public int ProcAttach(uint process)
         {
             int result = -1;
             uint[] procs = new uint[64];
-            result = GetProcessList(out procs);
+            result = GetProcList(out procs);
             if (SUCCESS(result))
             {
                 for (int i = 0; i < procs.Length; i++)
@@ -466,55 +460,45 @@ namespace PS3Lib
             return result;
         }
 
-        /// <summary>Get a list of all processes available.</summary>
-        public int GetProcessList(out uint[] processIds)
-        {
-            uint numOfProcs = 64; int result = -1;
-            IntPtr ptr = Marshal.AllocHGlobal((int)(4 * 0x40));
-            result = getProcessList(ref numOfProcs, ptr);
-            processIds = new uint[numOfProcs];
-            if (SUCCESS(result))
-            {
-                IntPtr unBuf = ptr;
-                for (uint i = 0; i < numOfProcs; i++)
-                    unBuf = ReadDataFromUnBufPtr<uint>(unBuf, ref processIds[i]);
-            }
-            Marshal.FreeHGlobal(ptr);
-            return result;
-        }
-
-        /// <summary>Get the process name of your choice.</summary>
-        public int GetProcessName(uint processId, out string name)
-        {
-            IntPtr ptr = Marshal.AllocHGlobal((int)(0x211)); int result = -1;
-            result = getProcessName(processId, ptr);
-            name = String.Empty;
-            if (SUCCESS(result))
-                name = Marshal.PtrToStringAnsi(ptr);
-            Marshal.FreeHGlobal(ptr);
-            return result;
-        }
-
         /// <summary>Return the current process attached. Use this function only if you called AttachProcess before.</summary>
         public uint GetAttachedProcess()
         {
             return System.processID;
         }
 
-        /// <summary>Set memory to offset (uint).</summary>
-        public int SetMemory(uint offset, byte[] buffer)
+        public int Buzzer(BuzzerMode Mode)
+        {
+            return ringBuzzer((int)Mode);
+        }
+
+        public int Notify(NotifyIcon Icon, string Message)
+        {
+            return notify((int)Icon, Message);
+        }
+
+        public int Notify(int Icon, string Message)
+        {
+            return notify(Icon, Message);
+        }
+
+        public int BootFunctions(BootMode flag)
+        {
+            return shutdown((int)flag);
+        }
+
+        public int SetProcMem(uint offset, byte[] buffer)
         {
             return setProcessMemory(System.processID, (ulong)offset, (uint)buffer.Length, buffer);
         }
 
         /// <summary>Set memory to offset (ulong).</summary>
-        public int SetMemory(ulong offset, byte[] buffer)
+        public int SetProcMem(ulong offset, byte[] buffer)
         {
             return setProcessMemory(System.processID, offset, (uint)buffer.Length, buffer);
         }
 
         /// <summary>Set memory to offset (string hex).</summary>
-        public int SetMemory(ulong offset, string hexadecimal, EndianType Type = EndianType.BigEndian)
+        public int SetProcMem(ulong offset, string hexadecimal, EndianType Type = EndianType.BigEndian)
         {
             byte[] Entry = StringToByteArray(hexadecimal);
             if (Type == EndianType.LittleEndian)
@@ -523,22 +507,21 @@ namespace PS3Lib
         }
 
         /// <summary>Get memory from offset (uint).</summary>
-        public int GetMemory(uint offset, byte[] buffer)
+        public int GetProcMem(uint offset, byte[] buffer)
         {
             return getProcessMemory(System.processID, (ulong)offset, (uint)buffer.Length, buffer);
         }
 
         /// <summary>Get memory from offset (ulong).</summary>
-        public int GetMemory(ulong offset, byte[] buffer)
+        public int GetProcMem(ulong offset, byte[] buffer)
         {
             return getProcessMemory(System.processID, offset, (uint)buffer.Length, buffer);
         }
 
-        /// <summary>Like Get memory but this function return directly the buffer from the offset (uint).</summary>
         public byte[] GetBytes(uint offset, uint length)
         {
             byte[] buffer = new byte[length];
-            GetMemory(offset, buffer);
+            GetProcMem(offset, buffer);
             return buffer;
         }
 
@@ -546,38 +529,13 @@ namespace PS3Lib
         public byte[] GetBytes(ulong offset, uint length)
         {
             byte[] buffer = new byte[length];
-            GetMemory(offset, buffer);
+            GetProcMem(offset, buffer);
             return buffer;
         }
 
-        /// <summary>Display the notify message on your PS3.</summary>
-        public int Notify(NotifyIcon icon, string message)
+        public int ConsoleLED(LedColor Color, LedMode Mode)
         {
-            return notify((int)icon, message);
-        }
-
-        /// <summary>Display the notify message on your PS3.</summary>
-        public int Notify(int icon, string message)
-        {
-            return notify(icon, message);
-        }
-
-        /// <summary>You can shutdown the console or just reboot her according the flag selected.</summary>
-        public int ShutDown(RebootFlags flag)
-        {
-            return shutdown((int)flag);
-        }
-
-        /// <summary>Your console will emit a song.</summary>
-        public int RingBuzzer(BuzzerMode flag)
-        {
-            return ringBuzzer((int)flag);
-        }
-
-        /// <summary>Change leds for your console.</summary>
-        public int SetConsoleLed(LedColor color, LedMode mode)
-        {
-            return setConsoleLed((int)color, (int)mode);
+            return setConsoleLed((int)Color, (int)Mode);
         }
 
         private int GetTargetInfo()
@@ -628,20 +586,20 @@ namespace PS3Lib
         }
 
         /// <summary>Return the current temperature of your system in string.</summary>
-        public string GetTemperatureCELL()
+        public string GetCELLTemp()
         {
             if (pInfo.TempCell == 0)
                 GetTargetInfo(out pInfo);
 
-            return pInfo.TempCell.ToString() + " C";
+            return pInfo.TempCell.ToString() + " °C";
         }
 
         /// <summary>Return the current temperature of your system in string.</summary>
-        public string GetTemperatureRSX()
+        public string GetRSXTemp()
         {
             if (pInfo.TempRSX == 0)
                 GetTargetInfo(out pInfo);
-            return pInfo.TempRSX.ToString() + " C";
+            return pInfo.TempRSX.ToString() + " °C";
         }
 
         /// <summary>Return the type of your firmware in string format.</summary>
@@ -655,11 +613,10 @@ namespace PS3Lib
             else if (pInfo.ConsoleType == (int)ConsoleType.DEX)
                 type = "DEX";
             else if (pInfo.ConsoleType == (int)ConsoleType.TOOL)
-                type = "TOOL";
+                type = "DECR";
             return type;
         }
 
-        /// <summary>Clear informations into the DLL (PS3Lib).</summary>
         public void ClearTargetInfo()
         {
             pInfo = new TargetInfo();
@@ -670,7 +627,7 @@ namespace PS3Lib
         {
             if (string.IsNullOrEmpty(consoleID))
             {
-                MessageBox.Show("Cannot send an empty value", "Empty or null console id", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("This is an empty value, it's invalid.", "Empty or null console id", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return -1;
             }
             string newCID = String.Empty;
@@ -684,7 +641,7 @@ namespace PS3Lib
         {
             if (consoleID.Length <= 0)
             {
-                MessageBox.Show("Cannot send an empty value", "Empty or null console id", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("This is an empty value, it's invalid.", "Empty or null console id", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return -1;
             }
             return setConsoleIds((int)IdType.IDPS, consoleID);
@@ -695,7 +652,7 @@ namespace PS3Lib
         {
             if (string.IsNullOrEmpty(PSID))
             {
-                MessageBox.Show("Cannot send an empty value", "Empty or null psid", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("This is an empty value, it's invalid.", "Empty or null psid", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return -1;
             }
             string PS_ID = String.Empty;
@@ -709,7 +666,7 @@ namespace PS3Lib
         {
             if (consoleID.Length <= 0)
             {
-                MessageBox.Show("Cannot send an empty value", "Empty or null psid", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("This is an empty value, it's invalid.", "Empty or null psid", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return -1;
             }
             return setConsoleIds((int)IdType.PSID, consoleID);
@@ -736,7 +693,6 @@ namespace PS3Lib
             return setBootConsoleIds((int)Type, 0, null);
         }
 
-        /// <summary>Return CCAPI Version.</summary>
         public int GetDllVersion()
         {
             return getDllVersion();
@@ -796,5 +752,6 @@ namespace PS3Lib
                 return new byte[1];
             }
         }
+
     }
 }
