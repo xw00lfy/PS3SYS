@@ -36,4 +36,4 @@ This library gives access to PS3 functions through APIs
 
 # Contributing
 
-I select who will contribute on this project :)
+You're allowed to fork my project. But i select who will make actual changes to the official project.
