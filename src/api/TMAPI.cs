@@ -1,25 +1,3 @@
-﻿// ************************************************* //
-//    --- Copyright (c) 2015 iMCS Productions ---    //
-// ************************************************* //
-//              PS3Lib v4 By FM|T iMCSx              //
-//                                                   //
-// Features v4.5 :                                   //
-// - Support CCAPI v2.60+ C# by iMCSx.               //
-// - Read/Write memory as 'double'.                  //
-// - Read/Write memory as 'float' array.             //
-// - Constructor overload for ArrayBuilder.          //
-// - Some functions fixes.                           //
-//                                                   //
-// Credits : Enstone, Buc-ShoTz                      //
-//                                                   //
-// Follow me :                                       //
-//                                                   //
-// FrenchModdingTeam.com                             //
-// Twitter.com/iMCSx                                 //
-// Facebook.com/iMCSx                                //
-//                                                   //
-// ************************************************* //
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -30,12 +8,22 @@ using System.Text;
 using System.Windows.Forms;
 using System.Xml;
 
-using PS3Lib.NET;
-
-namespace PS3Lib
+namespace PS3System
 {
     public class TMAPI
     {
+
+
+
+
+        public static uint ProcessID;
+        public static uint[] processIDs;
+        public static string snresult;
+        private static string usage;
+        public static string Info;
+        public static PS3TMAPI.ConnectStatus connectStatus;
+        public static string Status;
+        public static string MemStatus;
         public static int Target = 0xFF;
         public static bool AssemblyLoaded = true;
         public static PS3TMAPI.ResetParameter resetParameter;
@@ -44,10 +32,10 @@ namespace PS3Lib
         {
 
         }
-   
+
         public Extension Extension
         {
-            get { return new Extension(SelectAPI.TargetManager); }
+            get { return new Extension(SelectAPI.TMAPI); }
         }
 
         public class SCECMD
@@ -102,7 +90,6 @@ namespace PS3Lib
                 return Parameters.connectStatus;
             }
         }
-
         public SCECMD SCE
         {
             get { return new SCECMD(); }
@@ -129,23 +116,25 @@ namespace PS3Lib
 
         /// <summary>Enum of flag reset.</summary>
         public enum ResetTarget
-        {      
+        {
             Hard,
             Quick,
             ResetEx,
             Soft
         }
 
-        public void InitComms()
+        
+
+        public static void InitTargetComms()
         {
             PS3TMAPI.InitTargetComms();
         }
 
         /// <summary>Connect the default target and initialize the dll. Possible to put an int as arugment for determine which target to connect.</summary>
-        public bool ConnectTarget(int TargetIndex = 0)
+        public bool Connect(int TargetIndex = 0)
         {
             bool result = false;
-            if(AssemblyLoaded)
+            if (AssemblyLoaded)
                 PS3TMAPI_NET();
             AssemblyLoaded = false;
             Target = TargetIndex;
@@ -154,8 +143,7 @@ namespace PS3Lib
             return result;
         }
 
-        /// <summary>Connect the target by is name.</summary>
-        public bool ConnectTarget(string TargetName)
+        public bool Connect(string TargetName)
         {
             bool result = false;
             if (AssemblyLoaded)
@@ -171,7 +159,7 @@ namespace PS3Lib
         }
 
         /// <summary>Disconnect the target.</summary>
-        public void DisconnectTarget()
+        public void Disconnect()
         {
             PS3TMAPI.Disconnect(Target);
         }
@@ -191,7 +179,7 @@ namespace PS3Lib
         }
 
         /// <summary>Attach and continue the current process from the target.</summary>
-        public bool AttachProcess()
+        public bool AttachProc()
         {
             bool isOK = false;
             PS3TMAPI.GetProcessList(Target, out Parameters.processIDs);
@@ -209,14 +197,18 @@ namespace PS3Lib
             return isOK;
         }
 
+        public void InitComms()
+        {
+            PS3TMAPI.InitTargetComms();
+        }
         /// <summary>Set memory to the target (byte[]).</summary>
-        public void SetMemory(uint Address, byte[] Bytes)
+        public void SetProcMem(uint Address, byte[] Bytes)
         {
             PS3TMAPI.ProcessSetMemory(Target, PS3TMAPI.UnitType.PPU, Parameters.ProcessID, 0, Address, Bytes);
         }
 
         /// <summary>Set memory to the address (byte[]).</summary>
-        public void SetMemory(uint Address, ulong value)
+        public void SetProcMem(uint Address, ulong value)
         {
             byte[] b = BitConverter.GetBytes(value);
             Array.Reverse(b);
@@ -224,7 +216,7 @@ namespace PS3Lib
         }
 
         /// <summary>Set memory with value as string hexadecimal to the address (string).</summary>
-        public void SetMemory(uint Address, string hexadecimal, EndianType Type = EndianType.BigEndian)
+        public void SetProcMem(uint Address, string hexadecimal, EndianType Type = EndianType.BigEndian)
         {
             byte[] Entry = StringToByteArray(hexadecimal);
             if (Type == EndianType.LittleEndian)
@@ -233,7 +225,7 @@ namespace PS3Lib
         }
 
         /// <summary>Get memory from the address.</summary>
-        public void GetMemory(uint Address, byte[] Bytes)
+        public void GetProcMem(uint Address, byte[] Bytes)
         {
             PS3TMAPI.ProcessGetMemory(Target, PS3TMAPI.UnitType.PPU, Parameters.ProcessID, 0, Address, ref Bytes);
         }
@@ -289,7 +281,7 @@ namespace PS3Lib
             string PSNString = BitConverter.ToString(bytes);
             PSNString = PSNString.Replace("00", string.Empty);
             PSNString = PSNString.Replace("-", string.Empty);
-            for(int i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
                 PSNString = PSNString.Replace("^" + i.ToString(), string.Empty);
             return PSNString;
         }
@@ -338,6 +330,7 @@ namespace PS3Lib
                 return LoadApi;
             };
             return LoadApi;
+
         }
     }
 }
