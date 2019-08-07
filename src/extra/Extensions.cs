@@ -6,286 +6,299 @@ using System.Threading.Tasks;
 
 namespace PS3System
 {
-    public enum EndianType
+    public class Extension
     {
-        LittleEndian,
-        BigEndian
-    }
-
-    public class ArrayBuilder
-    {
-        private byte[] buffer;
-        private int size;
-
-        public ArrayBuilder(byte[] BytesArray)
+        private SelectAPI CurrentAPI;
+        public Extension(SelectAPI API)
         {
-            buffer = BytesArray;
-            size = buffer.Length;
+            CurrentAPI = API;
+            if (API == SelectAPI.TMAPI)
+                if (Common.TmApi == null)
+                    Common.TmApi = new TMAPI();
+            if (API == SelectAPI.CCAPI)
+                if (Common.CcApi == null)
+                    Common.CcApi = new CCAPI();
         }
 
-        public ArrayBuilder(int arraySize)
+        /// <summary>Read a signed byte.</summary>
+        public sbyte ReadSByte(uint offset)
         {
-            buffer = new byte[arraySize];
-            size = buffer.Length;
+            byte[] buffer = new byte[1];
+            GetMem(offset, buffer, CurrentAPI);
+            return (sbyte)buffer[0];
         }
 
-        public byte[] ToArray()
+        /// <summary>Read a byte a check if his value. This return a bool according the byte detected.</summary>
+        public bool ReadBool(uint offset)
         {
+            byte[] buffer = new byte[1];
+            GetMem(offset, buffer, CurrentAPI);
+            return buffer[0] != 0;
+        }
+
+        /// <summary>Read and return an integer 16 bits.</summary>
+        public short ReadInt16(uint offset)
+        {
+            byte[] buffer = GetBytes(offset, 2, CurrentAPI);
+            Array.Reverse(buffer, 0, 2);
+            return BitConverter.ToInt16(buffer, 0);
+        }
+
+        /// <summary>Read and return an integer 32 bits.</summary>
+        public int ReadInt32(uint offset)
+        {
+            byte[] buffer = GetBytes(offset, 4, CurrentAPI);
+            Array.Reverse(buffer, 0, 4);
+            return BitConverter.ToInt32(buffer, 0);
+        }
+
+        /// <summary>Read and return an integer 64 bits.</summary>
+        public long ReadInt64(uint offset)
+        {
+            byte[] buffer = GetBytes(offset, 8, CurrentAPI);
+            Array.Reverse(buffer, 0, 8);
+            return BitConverter.ToInt64(buffer, 0);
+        }
+
+        /// <summary>Read and return a byte.</summary>
+        public byte ReadByte(uint offset)
+        {
+            byte[] buffer = GetBytes(offset, 1, CurrentAPI);
+            return buffer[0];
+        }
+
+        /// <summary>Read a string with a length to the first byte equal to an value null (0x00).</summary>
+        public byte[] ReadBytes(uint offset, int length)
+        {
+            byte[] buffer = GetBytes(offset, (uint)length, CurrentAPI);
             return buffer;
         }
 
-        /// <summary>Enter into all functions "Reader".</summary>
-        public ArrayReader Read
+        /// <summary>Read and return an unsigned integer 16 bits.</summary>
+        public ushort ReadUInt16(uint offset)
         {
-            get { return new ArrayReader(buffer); }
+            byte[] buffer = GetBytes(offset, 2, CurrentAPI);
+            Array.Reverse(buffer, 0, 2);
+            return BitConverter.ToUInt16(buffer, 0);
         }
 
-        /// <summary>Enter into all functions "Writer".</summary>
-        public ArrayWriter Write
+        /// <summary>Read and return an unsigned integer 32 bits.</summary>
+        public uint ReadUInt32(uint offset)
         {
-            get { return new ArrayWriter(buffer); }
+            byte[] buffer = GetBytes(offset, 4, CurrentAPI);
+            Array.Reverse(buffer, 0, 4);
+            return BitConverter.ToUInt32(buffer, 0);
         }
 
-        public class ArrayReader
+        /// <summary>Read and return an unsigned integer 64 bits.</summary>
+        public ulong ReadUInt64(uint offset)
         {
-            private byte[] buffer;
-            private int size;
+            byte[] buffer = GetBytes(offset, 8, CurrentAPI);
+            Array.Reverse(buffer, 0, 8);
+            return BitConverter.ToUInt64(buffer, 0);
+        }
 
-            public ArrayReader(byte[] BytesArray)
+        /// <summary>Read and return a Float.</summary>
+        public float ReadFloat(uint offset)
+        {
+            byte[] buffer = GetBytes(offset, 4, CurrentAPI);
+            Array.Reverse(buffer, 0, 4);
+            return BitConverter.ToSingle(buffer, 0);
+        }
+
+        /// <summary>Read and return an array of Floats.</summary>
+        public float[] ReadFloats(uint offset, int arrayLength = 3)
+        {
+            float[] vec = new float[arrayLength];
+            for (int i = 0; i < arrayLength; i++)
             {
-                buffer = BytesArray;
-                size = buffer.Length;
+                byte[] buffer = GetBytes(offset + ((uint)i * 4), 4, CurrentAPI);
+                Array.Reverse(buffer, 0, 4);
+                vec[i] = BitConverter.ToSingle(buffer, 0);
+            }
+            return vec;
+        }
+
+        /// <summary>Read and return a Double.</summary>
+        public double ReadDouble(uint offset)
+        {
+            byte[] buffer = GetBytes(offset, 8, CurrentAPI);
+            Array.Reverse(buffer, 0, 8);
+            return BitConverter.ToDouble(buffer, 0);
+        }
+
+        /// <summary>Read a string very fast by buffer and stop only when a byte null is detected (0x00).</summary>
+        public string ReadString(uint offset)
+        {
+            int blocksize = 40;
+            int scalesize = 0;
+            string str = string.Empty;
+
+            while (!str.Contains('\0'))
+            {
+                byte[] buffer = ReadBytes(offset + (uint)scalesize, blocksize);
+                str += Encoding.UTF8.GetString(buffer);
+                scalesize += blocksize;
             }
 
-            public sbyte GetSByte(int pos)
-            {
-                return (sbyte)buffer[pos];
-            }
+            return str.Substring(0, str.IndexOf('\0'));
+        }
 
-            public byte GetByte(int pos)
-            {
-                return buffer[pos];
-            }
+        /// <summary>Write a signed byte.</summary>
+        public void WriteSByte(uint offset, sbyte input)
+        {
+            byte[] buff = new byte[1];
+            buff[0] = (byte)input;
+            SetMem(offset, buff, CurrentAPI);
+        }
 
-            public char GetChar(int pos)
-            {
-                string s = buffer[pos].ToString();
-                char b = s[0];
-                return b;
-            }
+        /// <summary>Write a boolean.</summary>
+        public void WriteBool(uint offset, bool input)
+        {
+            byte[] buff = new byte[1];
+            buff[0] = input ? (byte)1 : (byte)0;
+            SetMem(offset, buff, CurrentAPI);
+        }
 
-            public bool GetBool(int pos)
-            {
-                return buffer[pos] != 0;
-            }
+        /// <summary>Write an interger 16 bits.</summary>
+        public void WriteInt16(uint offset, short input)
+        {
+            byte[] buff = new byte[2];
+            BitConverter.GetBytes(input).CopyTo(buff, 0);
+            Array.Reverse(buff, 0, 2);
+            SetMem(offset, buff, CurrentAPI);
+        }
 
-            public short GetInt16(int pos, EndianType Type = EndianType.BigEndian)
-            {
-                byte[] b = new byte[2];
-                for (int i = 0; i < 2; i++)
-                    b[i] = buffer[pos + i];
-                if (Type == EndianType.BigEndian)
-                    Array.Reverse(b, 0, 2);
-                return BitConverter.ToInt16(b, 0);
-            }
+        /// <summary>Write an integer 32 bits.</summary>
+        public void WriteInt32(uint offset, int input)
+        {
+            byte[] buff = new byte[4];
+            BitConverter.GetBytes(input).CopyTo(buff, 0);
+            Array.Reverse(buff, 0, 4);
+            SetMem(offset, buff, CurrentAPI);
+        }
 
-            public int GetInt32(int pos, EndianType Type = EndianType.BigEndian)
-            {
-                byte[] b = new byte[4];
-                for (int i = 0; i < 4; i++)
-                    b[i] = buffer[pos + i];
-                if (Type == EndianType.BigEndian)
-                    Array.Reverse(b, 0, 4);
-                return BitConverter.ToInt32(b, 0);
-            }
+        /// <summary>Write an integer 64 bits.</summary>
+        public void WriteInt64(uint offset, long input)
+        {
+            byte[] buff = new byte[8];
+            BitConverter.GetBytes(input).CopyTo(buff, 0);
+            Array.Reverse(buff, 0, 8);
+            SetMem(offset, buff, CurrentAPI);
+        }
 
-            public long GetInt64(int pos, EndianType Type = EndianType.BigEndian)
-            {
-                byte[] b = new byte[8];
-                for (int i = 0; i < 8; i++)
-                    b[i] = buffer[pos + i];
-                if (Type == EndianType.BigEndian)
-                    Array.Reverse(b, 0, 8);
-                return BitConverter.ToInt64(b, 0);
-            }
+        /// <summary>Write a byte.</summary>
+        public void WriteByte(uint offset, byte input)
+        {
+            byte[] buff = new byte[1];
+            buff[0] = input;
+            SetMem(offset, buff, CurrentAPI);
+        }
 
-            public ushort GetUInt16(int pos, EndianType Type = EndianType.BigEndian)
-            {
-                byte[] b = new byte[2];
-                for (int i = 0; i < 2; i++)
-                    b[i] = buffer[pos + i];
-                if (Type == EndianType.BigEndian)
-                    Array.Reverse(b, 0, 2);
-                return BitConverter.ToUInt16(b, 0);
-            }
+        /// <summary>Write a byte array.</summary>
+        public void WriteBytes(uint offset, byte[] input)
+        {
+            byte[] buff = input;
+            SetMem(offset, buff, CurrentAPI);
+        }
 
-            public uint GetUInt32(int pos, EndianType Type = EndianType.BigEndian)
-            {
-                byte[] b = new byte[4];
-                for (int i = 0; i < 4; i++)
-                    b[i] = buffer[pos + i];
-                if (Type == EndianType.BigEndian)
-                    Array.Reverse(b, 0, 4);
-                return BitConverter.ToUInt32(b, 0);
-            }
+        /// <summary>Write a string.</summary>
+        public void WriteString(uint offset, string input)
+        {
+            byte[] buff = Encoding.UTF8.GetBytes(input);
+            Array.Resize(ref buff, buff.Length + 1);
+            SetMem(offset, buff, CurrentAPI);
+        }
 
-            public ulong GetUInt64(int pos, EndianType Type = EndianType.BigEndian)
-            {
-                byte[] b = new byte[8];
-                for (int i = 0; i < 8; i++)
-                    b[i] = buffer[pos + i];
-                if (Type == EndianType.BigEndian)
-                    Array.Reverse(b, 0, 8);
-                return BitConverter.ToUInt64(b, 0);
-            }
+        /// <summary>Write an unsigned integer 16 bits.</summary>
+        public void WriteUInt16(uint offset, ushort input)
+        {
+            byte[] buff = new byte[2];
+            BitConverter.GetBytes(input).CopyTo(buff, 0);
+            Array.Reverse(buff, 0, 2);
+            SetMem(offset, buff, CurrentAPI);
+        }
 
-            public byte[] GetBytes(int pos, int length)
-            {
-                byte[] b = new byte[length];
-                for (int i = 0; i < length; i++)
-                    b[i] = buffer[pos + i];
-                return b;
-            }
+        /// <summary>Write an unsigned integer 32 bits.</summary>
+        public void WriteUInt32(uint offset, uint input)
+        {
+            byte[] buff = new byte[4];
+            BitConverter.GetBytes(input).CopyTo(buff, 0);
+            Array.Reverse(buff, 0, 4);
+            SetMem(offset, buff, CurrentAPI);
+        }
 
-            public string GetString(int pos)
-            {
-                int strlen = 0;
-                while (true)
-                {
-                    if ((pos + strlen) == buffer.Length)
-                        break;
-                    if (buffer[pos + strlen] != (byte)0)
-                        strlen++;
-                    else break;
-                }
-                return Encoding.UTF8.GetString(
-                    buffer.ToList()
-                    .GetRange(pos, strlen)
-                    .ToArray());
-            }
+        /// <summary>Write an unsigned integer 64 bits.</summary>
+        public void WriteUInt64(uint offset, ulong input)
+        {
+            byte[] buff = new byte[8];
+            BitConverter.GetBytes(input).CopyTo(buff, 0);
+            Array.Reverse(buff, 0, 8);
+            SetMem(offset, buff, CurrentAPI);
+        }
 
-            public float GetFloat(int pos)
+        /// <summary>Write a Float.</summary>
+        public void WriteFloat(uint offset, float input)
+        {
+            byte[] buff = new byte[4];
+            BitConverter.GetBytes(input).CopyTo(buff, 0);
+            Array.Reverse(buff, 0, 4);
+            SetMem(offset, buff, CurrentAPI);
+        }
+
+        /// <summary>Write an array of Floats.</summary>
+        public void WriteFloats(uint offset, float[] input)
+        {
+            byte[] buff = new byte[4];
+            for (int i = 0; i < input.Length; i++)
             {
-                byte[] b = new byte[4];
-                for (int i = 0; i < 4; i++)
-                    b[i] = buffer[pos + i];
-                Array.Reverse(b, 0, 4);
-                return BitConverter.ToSingle(b, 0);
+                BitConverter.GetBytes(input[i]).CopyTo(buff, 0);
+                Array.Reverse(buff, 0, 4);
+                SetMem(offset + ((uint)i * 4), buff, CurrentAPI);
             }
         }
 
-        public class ArrayWriter
+        /// <summary>Write a double.</summary>
+        public void WriteDouble(uint offset, double input)
         {
-            private byte[] buffer;
-            private int size;
+            byte[] buff = new byte[8];
+            BitConverter.GetBytes(input).CopyTo(buff, 0);
+            Array.Reverse(buff, 0, 8);
+            SetMem(offset, buff, CurrentAPI);
+        }
 
-            public ArrayWriter(byte[] BytesArray)
-            {
-                buffer = BytesArray;
-                size = buffer.Length;
-            }
+        private void SetMem(uint Address, byte[] buffer, SelectAPI API)
+        {
+            if (API == SelectAPI.CCAPI)
+                Common.CcApi.SetProcMem(Address, buffer);
+            else if (API == SelectAPI.TMAPI)
+                Common.TmApi.SetProcMem(Address, buffer);
+        }
 
-            public void SetSByte(int pos, sbyte value)
-            {
-                buffer[pos] = (byte)value;
-            }
+        private void GetMem(uint offset, byte[] buffer, SelectAPI API)
+        {
+            if (API == SelectAPI.CCAPI)
+                Common.CcApi.GetProcMem(offset, buffer);
+            else if (API == SelectAPI.TMAPI)
+                Common.TmApi.GetProcMem(offset, buffer);
+        }
 
-            public void SetByte(int pos, byte value)
-            {
-                buffer[pos] = value;
-            }
+        private byte[] GetBytes(uint offset, uint length, SelectAPI API)
+        {
+            byte[] buffer = new byte[length];
+            if (API == SelectAPI.CCAPI)
+                buffer = Common.CcApi.GetBytes(offset, length);
+            else if (API == SelectAPI.TMAPI)
+                buffer = Common.TmApi.GetBytes(offset, length);
+            return buffer;
+        }
 
-            public void SetChar(int pos, char value)
-            {
-                byte[] b = Encoding.UTF8.GetBytes(value.ToString());
-                buffer[pos] = b[0];
-            }
-
-            public void SetBool(int pos, bool value)
-            {
-                byte[] b = new byte[1];
-                b[0] = value ? (byte)1 : (byte)0;
-                buffer[pos] = b[0];
-            }
-
-            public void SetInt16(int pos, short value, EndianType Type = EndianType.BigEndian)
-            {
-                byte[] b = BitConverter.GetBytes(value);
-                if (Type == EndianType.BigEndian)
-                    Array.Reverse(b, 0, 2);
-                for (int i = 0; i < 2; i++)
-                    buffer[i + pos] = b[i];
-            }
-
-            public void SetInt32(int pos, int value, EndianType Type = EndianType.BigEndian)
-            {
-                byte[] b = BitConverter.GetBytes(value);
-                if (Type == EndianType.BigEndian)
-                    Array.Reverse(b, 0, 4);
-                for (int i = 0; i < 4; i++)
-                    buffer[i + pos] = b[i];
-            }
-
-            public void SetInt64(int pos, long value, EndianType Type = EndianType.BigEndian)
-            {
-                byte[] b = BitConverter.GetBytes(value);
-                if (Type == EndianType.BigEndian)
-                    Array.Reverse(b, 0, 8);
-                for (int i = 0; i < 8; i++)
-                    buffer[i + pos] = b[i];
-            }
-
-            public void SetUInt16(int pos, ushort value, EndianType Type = EndianType.BigEndian)
-            {
-                byte[] b = BitConverter.GetBytes(value);
-                if (Type == EndianType.BigEndian)
-                    Array.Reverse(b, 0, 2);
-                for (int i = 0; i < 2; i++)
-                    buffer[i + pos] = b[i];
-            }
-
-            public void SetUInt32(int pos, uint value, EndianType Type = EndianType.BigEndian)
-            {
-                byte[] b = BitConverter.GetBytes(value);
-                if (Type == EndianType.BigEndian)
-                    Array.Reverse(b, 0, 4);
-                for (int i = 0; i < 4; i++)
-                    buffer[i + pos] = b[i];
-            }
-
-            public void SetUInt64(int pos, ulong value, EndianType Type = EndianType.BigEndian)
-            {
-                byte[] b = BitConverter.GetBytes(value);
-                if (Type == EndianType.BigEndian)
-                    Array.Reverse(b, 0, 8);
-                for (int i = 0; i < 8; i++)
-                    buffer[i + pos] = b[i];
-            }
-
-            public void SetBytes(int pos, byte[] value)
-            {
-                int valueSize = value.Length;
-                for (int i = 0; i < valueSize; i++)
-                    buffer[i + pos] = value[i];
-            }
-
-            public void SetString(int pos, string value)
-            {
-                byte[] b = Encoding.UTF8.GetBytes(value + "\0");
-                for (int i = 0; i < b.Length; i++)
-                    buffer[i + pos] = b[i];
-            }
-
-            public void SetFloat(int pos, float value)
-            {
-                byte[] b = BitConverter.GetBytes(value);
-                Array.Reverse(b, 0, 4);
-                for (int i = 0; i < 4; i++)
-                    buffer[i + pos] = b[i];
-            }
-
+        private class Common
+        {
+            public static CCAPI CcApi;
+            public static TMAPI TmApi;
         }
 
     }
-
 }
+
