@@ -17,7 +17,7 @@ namespace PS3System
     public class PS3MAPI
     {
 
-        public int PS3M_API_PC_LIB_VERSION = 0x0112;
+        public int PS3M_API_PC_LIB_VERSION = 0x0120;
 
         public CORE_CMD Core = new CORE_CMD();
         public SERVER_CMD Server = new SERVER_CMD();
@@ -607,7 +607,7 @@ namespace PS3System
         {
             #region Private Members
 
-            static private int ps3m_api_server_minversion = 0x0111;
+            static private int ps3m_api_server_minversion = 0x0120;
             static private PS3MAPI_ResponseCode eResponseCode;
             static private string sResponse;
             static private string sMessages = "";
